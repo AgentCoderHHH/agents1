@@ -1,1 +1,252 @@
- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentOpenApi Monitoring Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .chart-title {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AgentOpenApi Monitoring Dashboard</h1>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>CPU Usage</h3>
+                <div class="metric-value" id="cpu-usage">0%</div>
+            </div>
+            <div class="metric-card">
+                <h3>Memory Usage</h3>
+                <div class="metric-value" id="memory-usage">0%</div>
+            </div>
+            <div class="metric-card">
+                <h3>Available Memory</h3>
+                <div class="metric-value" id="available-memory">0 GB</div>
+            </div>
+            <div class="metric-card">
+                <h3>Disk Usage</h3>
+                <div class="metric-value" id="disk-usage">0%</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">System Metrics Over Time</h3>
+            <canvas id="system-chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">API Calls</h3>
+            <canvas id="api-calls-chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">API Errors</h3>
+            <canvas id="api-errors-chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">Operation Duration</h3>
+            <canvas id="operation-duration-chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">Active Operations</h3>
+            <canvas id="active-operations-chart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Initialize charts
+        const systemChart = new Chart(
+            document.getElementById('system-chart'),
+            {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'CPU %', data: [], borderColor: '#2196F3' },
+                        { label: 'Memory %', data: [], borderColor: '#4CAF50' },
+                        { label: 'Disk %', data: [], borderColor: '#FF9800' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            }
+        );
+
+        const apiCallsChart = new Chart(
+            document.getElementById('api-calls-chart'),
+            {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{ label: 'API Calls', data: [], backgroundColor: '#2196F3' }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            }
+        );
+
+        const apiErrorsChart = new Chart(
+            document.getElementById('api-errors-chart'),
+            {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{ label: 'API Errors', data: [], backgroundColor: '#F44336' }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            }
+        );
+
+        const operationDurationChart = new Chart(
+            document.getElementById('operation-duration-chart'),
+            {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{ label: 'Duration (s)', data: [], borderColor: '#9C27B0' }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            }
+        );
+
+        const activeOperationsChart = new Chart(
+            document.getElementById('active-operations-chart'),
+            {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{ label: 'Active Operations', data: [], borderColor: '#FF9800' }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            }
+        );
+
+        // Update metrics every 5 seconds
+        function updateMetrics() {
+            fetch('/api/system_metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cpu-usage').textContent = data.cpu_percent + '%';
+                    document.getElementById('memory-usage').textContent = data.memory_percent + '%';
+                    document.getElementById('available-memory').textContent = data.memory_available.toFixed(2) + ' GB';
+                    document.getElementById('disk-usage').textContent = data.disk_usage + '%';
+
+                    // Update system chart
+                    const now = new Date().toLocaleTimeString();
+                    systemChart.data.labels.push(now);
+                    systemChart.data.datasets[0].data.push(data.cpu_percent);
+                    systemChart.data.datasets[1].data.push(data.memory_percent);
+                    systemChart.data.datasets[2].data.push(data.disk_usage);
+
+                    if (systemChart.data.labels.length > 20) {
+                        systemChart.data.labels.shift();
+                        systemChart.data.datasets.forEach(dataset => dataset.data.shift());
+                    }
+
+                    systemChart.update();
+                });
+
+            fetch('/api/agent_metrics')
+                .then(response => response.json())
+                .then(data => {
+                    // Update API calls chart
+                    apiCallsChart.data.labels = Object.keys(data.api_calls);
+                    apiCallsChart.data.datasets[0].data = Object.values(data.api_calls);
+                    apiCallsChart.update();
+
+                    // Update API errors chart
+                    apiErrorsChart.data.labels = Object.keys(data.api_errors);
+                    apiErrorsChart.data.datasets[0].data = Object.values(data.api_errors);
+                    apiErrorsChart.update();
+
+                    // Update operation duration chart
+                    operationDurationChart.data.labels = Object.keys(data.operation_duration);
+                    operationDurationChart.data.datasets[0].data = Object.values(data.operation_duration);
+                    operationDurationChart.update();
+
+                    // Update active operations chart
+                    activeOperationsChart.data.labels = Object.keys(data.active_operations);
+                    activeOperationsChart.data.datasets[0].data = Object.values(data.active_operations);
+                    activeOperationsChart.update();
+                });
+        }
+
+        // Initial update
+        updateMetrics();
+        // Update every 5 seconds
+        setInterval(updateMetrics, 5000);
+    </script>
+</body>
+</html> 

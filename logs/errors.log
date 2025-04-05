@@ -1,0 +1,1 @@
+2025-04-05 13:36:53 | ERROR    | agents:<module>:57 - Failed to initialize monitoring system: name 'monitoring_server' is not defined

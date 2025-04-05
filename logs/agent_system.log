@@ -1,0 +1,29 @@
+2025-04-05 12:44:11 | INFO     | agents.monitoring:run_server:65 - Prometheus metrics server started on port 8000
+2025-04-05 12:49:22 | INFO     | agents:<module>:55 - Monitoring system initialized successfully
+2025-04-05 12:49:22 | INFO     | __main__:start_monitoring:97 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 12:49:22 | INFO     | agents.monitoring:run_server:60 - Prometheus metrics server started on port 8000
+2025-04-05 12:49:47 | INFO     | agents:<module>:55 - Monitoring system initialized successfully
+2025-04-05 12:49:47 | INFO     | __main__:start_monitoring:97 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 12:49:47 | INFO     | agents.monitoring:run_server:60 - Prometheus metrics server started on port 8000
+2025-04-05 12:51:40 | INFO     | agents:<module>:55 - Monitoring system initialized successfully
+2025-04-05 12:51:40 | INFO     | __main__:start_monitoring:106 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 12:51:40 | INFO     | agents.monitoring:run_server:60 - Prometheus metrics server started on port 8000
+2025-04-05 12:52:49 | INFO     | agents:<module>:55 - Monitoring system initialized successfully
+2025-04-05 12:52:49 | INFO     | __main__:start_monitoring:106 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 12:52:49 | INFO     | agents.monitoring:run_server:60 - Prometheus metrics server started on port 8000
+2025-04-05 13:28:47 | INFO     | agents:<module>:55 - Monitoring system initialized successfully
+2025-04-05 13:28:47 | INFO     | __main__:start_monitoring:106 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 13:28:47 | INFO     | agents.monitoring:run_server:60 - Prometheus metrics server started on port 8000
+2025-04-05 13:29:37 | INFO     | agents:<module>:55 - Monitoring system initialized successfully
+2025-04-05 13:29:37 | INFO     | __main__:start_monitoring:113 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 13:29:38 | INFO     | agents.monitoring:run_server:60 - Prometheus metrics server started on port 8000
+2025-04-05 13:30:17 | INFO     | agents:<module>:55 - Monitoring system initialized successfully
+2025-04-05 13:30:17 | INFO     | __main__:start_monitoring:118 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 13:30:17 | INFO     | agents.monitoring:run_server:60 - Prometheus metrics server started on port 8000
+2025-04-05 13:31:48 | INFO     | agents:<module>:55 - Monitoring system initialized successfully
+2025-04-05 13:31:48 | INFO     | __main__:start_monitoring:111 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 13:31:48 | INFO     | agents.monitoring:run_server:62 - Prometheus metrics server started on port 8000
+2025-04-05 13:33:42 | INFO     | agents:<module>:55 - Monitoring system initialized successfully
+2025-04-05 13:33:42 | INFO     | __main__:start_monitoring:111 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 13:33:42 | INFO     | agents.monitoring:run_server:62 - Prometheus metrics server started on port 8000
+2025-04-05 13:36:53 | ERROR    | agents:<module>:57 - Failed to initialize monitoring system: name 'monitoring_server' is not defined
