@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Dict, Optional
-import openai
+from typing import List, Dict, Optional, Any
 from loguru import logger
 import os
 from dotenv import load_dotenv
-from .utils import rate_limit
+from openai import AsyncOpenAI
 from pathlib import Path
+from .utils import rate_limit
+from github import Github
+import base64
 
 load_dotenv()
 
@@ -17,85 +19,125 @@ class TechnicalLevel(Enum):
 
 @dataclass
 class DocumentationConfig:
-    target_audience: str
-    technical_level: TechnicalLevel
-    format: str
-    language: str = "en"
-    style_guide: str = "default"
+    target_audience: TechnicalLevel = TechnicalLevel.INTERMEDIATE
+    format: str = "markdown"
+    include_examples: bool = True
+    max_tokens: int = 4000
+    temperature: float = 0.7
 
 class DocumentationMakerAgent:
-    def __init__(self, config: DocumentationConfig):
-        self.config = config
-        self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    """Agent for generating comprehensive documentation"""
+    
+    def __init__(self):
+        self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.github = Github(os.getenv("GITHUB_TOKEN"))
+        self.config = DocumentationConfig()
         self.templates_dir = Path("templates")
         self.templates_dir.mkdir(exist_ok=True)
         
-    @rate_limit(calls_per_minute=60)
-    async def generate_documentation(self, topic: str, content: str) -> str:
-        """Generate documentation based on the given topic and content"""
+    async def generate_documentation(self, topic: str, reasoning_effort: str = "balanced") -> Dict[str, Any]:
+        """Generate comprehensive documentation for a topic"""
         try:
-            prompt = self._create_prompt(topic, content)
+            # Generate documentation using GPT-4
+            system_prompt = self._create_system_prompt()
             response = await self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": self._get_system_prompt()},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Generate documentation about: {topic}"}
                 ],
-                temperature=0.7,
-                max_tokens=2000
+                temperature=self.config.temperature,
+                max_tokens=self.config.max_tokens
             )
-            return response.choices[0].message.content
+            
+            documentation = response.choices[0].message.content
+            
+            # Assess documentation quality
+            quality_score = await self._assess_quality(documentation, topic)
+            
+            # Store in GitHub if quality is good
+            if quality_score >= 0.8:
+                await self._store_in_github(topic, documentation)
+            
+            return {
+                "documentation": documentation,
+                "quality_score": quality_score,
+                "format": self.config.format,
+                "target_audience": self.config.target_audience.value
+            }
         except Exception as e:
             logger.error(f"Error generating documentation: {str(e)}")
-            return ""
-    
-    def _create_prompt(self, topic: str, content: str) -> str:
-        """Create a prompt for the AI model"""
-        return f"""
-        Create documentation for the following topic: {topic}
-        
-        Technical Level: {self.config.technical_level.value}
-        Target Audience: {self.config.target_audience}
-        Format: {self.config.format}
-        
-        Content to document:
-        {content}
-        
-        Please structure the documentation appropriately for the specified technical level
-        and target audience. Include examples where relevant.
-        """
-    
-    def _get_system_prompt(self) -> str:
-        """Get the system prompt based on configuration"""
-        return f"""
-        You are a technical documentation writer specializing in {self.config.technical_level.value} level content.
-        Your task is to create clear, concise, and accurate documentation that is appropriate for {self.config.target_audience}.
-        Follow the {self.config.style_guide} style guide and ensure the documentation is well-structured and easy to follow.
-        """
-    
-    def organize_content(self, content: str) -> Dict[str, str]:
-        """Organize content into sections"""
-        sections = {
-            "Overview": "",
-            "Prerequisites": "",
-            "Installation": "",
-            "Usage": "",
-            "Examples": "",
-            "API Reference": "",
-            "Troubleshooting": ""
-        }
-        
-        # Simple content organization based on headers
-        current_section = "Overview"
-        for line in content.split('\n'):
-            if line.startswith('#'):
-                section_name = line.strip('#').strip()
-                if section_name in sections:
-                    current_section = section_name
-            else:
-                sections[current_section] += line + '\n'
-                
-        return sections
+            return {"error": str(e)}
+
+    def _create_system_prompt(self) -> str:
+        """Create system prompt based on configuration"""
+        prompt = f"""You are a technical documentation expert. Generate comprehensive documentation with the following characteristics:
+- Target audience: {self.config.target_audience.value}
+- Format: {self.config.format}
+- Include examples: {self.config.include_examples}
+- Focus on clarity and accuracy
+- Structure the content logically
+- Include code examples where relevant
+- Use proper formatting and markdown
+"""
+        return prompt
+
+    async def _assess_quality(self, documentation: str, topic: str) -> float:
+        """Assess the quality of generated documentation"""
+        try:
+            response = await self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Assess documentation quality on a scale of 0-1."},
+                    {"role": "user", "content": f"Assess this documentation about {topic}:\n\n{documentation}"}
+                ],
+                temperature=0.3,
+                max_tokens=10
+            )
+            
+            score_text = response.choices[0].message.content.strip()
+            try:
+                return float(score_text)
+            except ValueError:
+                return 0.5
+        except Exception as e:
+            logger.error(f"Error assessing documentation quality: {str(e)}")
+            return 0.5
+
+    async def _store_in_github(self, topic: str, documentation: str) -> None:
+        """Store documentation in GitHub repository"""
+        try:
+            repo_name = os.getenv("GITHUB_REPO", "documentation")
+            repo = self.github.get_user().get_repo(repo_name)
+            
+            # Create a filename from the topic
+            filename = f"docs/{topic.lower().replace(' ', '_')}.md"
+            
+            # Check if file exists
+            try:
+                contents = repo.get_contents(filename)
+                # Update existing file
+                repo.update_file(
+                    filename,
+                    f"Update documentation for {topic}",
+                    documentation,
+                    contents.sha
+                )
+            except:
+                # Create new file
+                repo.create_file(
+                    filename,
+                    f"Add documentation for {topic}",
+                    documentation
+                )
+            
+            logger.info(f"Documentation stored in GitHub: {filename}")
+        except Exception as e:
+            logger.error(f"Error storing documentation in GitHub: {str(e)}")
+
+    async def execute(self, topic: str, reasoning_effort: str = "balanced") -> Dict[str, Any]:
+        """Execute the documentation generation process"""
+        return await self.generate_documentation(topic, reasoning_effort)
     
     @rate_limit(calls_per_minute=60)
     async def validate_documentation(self, documentation: str) -> bool:
@@ -108,7 +150,7 @@ class DocumentationMakerAgent:
                 return False
                 
         # Check for code examples if technical level is not beginner
-        if self.config.technical_level != TechnicalLevel.BEGINNER:
+        if self.config.target_audience != TechnicalLevel.BEGINNER:
             if "```" not in documentation:
                 logger.warning("Missing code examples")
                 return False

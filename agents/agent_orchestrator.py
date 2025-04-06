@@ -1,170 +1,201 @@
+from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Any, Optional
-import asyncio
 from loguru import logger
-import os
+from openai import AsyncOpenAI
 from dotenv import load_dotenv
-from .internet_documentation_agent import InternetDocumentationAgent, WebResearchConfig
-from .documentation_maker_agent import DocumentationMakerAgent, DocumentationConfig, TechnicalLevel
-from .prompt_engineering_agent import PromptEngineeringAgent, PromptConfig, OptimizationLevel
-from .error_handler import ErrorHandler, ErrorSeverity
+import os
+import json
+from pathlib import Path
 
+from .internet_documentation_agent import InternetDocumentationAgent
+from .documentation_maker_agent import DocumentationMakerAgent
+from .prompt_engineering_agent import PromptEngineeringAgent
+
+# Load environment variables
 load_dotenv()
 
-class ExecutionMode(Enum):
+class OrchestratorMode(Enum):
     SEQUENTIAL = "sequential"
     PARALLEL = "parallel"
-
-class ErrorHandling(Enum):
-    STRICT = "strict"
-    LENIENT = "lenient"
+    ADAPTIVE = "adaptive"
 
 @dataclass
 class OrchestratorConfig:
-    execution_mode: ExecutionMode
-    context_sharing: bool
-    error_handling: ErrorHandling
+    mode: OrchestratorMode = OrchestratorMode.SEQUENTIAL
     max_retries: int = 3
-    timeout: int = 300  # seconds
+    timeout_seconds: int = 300
+    max_concurrent_tasks: int = 3
+
+@dataclass
+class RunContext:
+    topic: str
+    start_time: float
+    parent_context: Optional['RunContext'] = None
+    metadata: Dict[str, Any] = None
 
 class AgentOrchestrator:
-    def __init__(self, config: OrchestratorConfig):
-        self.config = config
+    def __init__(self, config: Optional[OrchestratorConfig] = None):
+        self.config = config or OrchestratorConfig()
+        self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.agents = {}
-        self.error_handler = ErrorHandler("AgentOrchestrator")
-        self.initialize_agents()
-        
-    def initialize_agents(self):
-        """Initialize all agents"""
+        self.execution_history = []
+        self.context_store: Dict[str, RunContext] = {}
+        self.execution_queue: List[Dict[str, Any]] = []
+
+    async def initialize(self):
+        """Initialize all agents."""
         try:
-            self.agents["internet"] = InternetDocumentationAgent(WebResearchConfig(
-                search_engines=["google.com", "bing.com"],
-                content_filters=["docs", "tutorial", "guide"],
-                credibility_threshold=0.7
-            ))
+            # Initialize research agent
+            self.agents["research"] = InternetDocumentationAgent()
             
-            self.agents["documentation"] = DocumentationMakerAgent(DocumentationConfig(
-                target_audience="developers",
-                technical_level=TechnicalLevel.INTERMEDIATE,
-                format="markdown"
-            ))
+            # Initialize documentation agent
+            self.agents["documentation"] = DocumentationMakerAgent()
             
-            self.agents["prompt"] = PromptEngineeringAgent(PromptConfig(
-                optimization_level=OptimizationLevel.BALANCED,
-                template_version="1.0",
-                parameters={}
-            ))
+            # Initialize prompt engineering agent
+            self.agents["prompt"] = PromptEngineeringAgent()
             
-            for agent_name, agent in self.agents.items():
-                try:
-                    await agent.initialize()
-                except Exception as e:
-                    self.error_handler.handle_error(
-                        e,
-                        f"initialize_{agent_name}",
-                        ErrorSeverity.ERROR,
-                        {"agent_name": agent_name}
-                    )
-                    raise
-                    
+            logger.info("All agents initialized successfully")
+            
         except Exception as e:
-            self.error_handler.handle_error(
-                e,
-                "initialize_agents",
-                ErrorSeverity.CRITICAL
-            )
+            logger.error(f"Error initializing agents: {str(e)}")
             raise
-            
+
     async def execute_workflow(self, topic: str) -> Dict[str, Any]:
-        """Execute the documentation workflow"""
-        result = {}
-        
+        """Execute the complete research and documentation workflow."""
         try:
-            if self.config.execution_mode == ExecutionMode.SEQUENTIAL:
-                result = await self._execute_sequential(topic)
-            else:
-                result = await self._execute_parallel(topic)
-                
-        except Exception as e:
-            error_context = self.error_handler.handle_error(
-                e,
-                "execute_workflow",
-                ErrorSeverity.ERROR,
-                {"topic": topic, "execution_mode": self.config.execution_mode}
+            # Initialize agents if not already done
+            if not self.agents:
+                await self.initialize()
+            
+            # Step 1: Research the topic
+            logger.info(f"Starting research on topic: {topic}")
+            research_results = await self.agents["research"].research_topic(topic)
+            
+            # Step 2: Generate documentation
+            logger.info("Generating documentation")
+            documentation = await self.agents["documentation"].generate_documentation(topic)
+            
+            # Step 3: Optimize prompts
+            logger.info("Optimizing prompts")
+            optimized_prompts = await self.agents["prompt"].optimize_prompt(
+                f"Explain {topic} in detail"
             )
             
-            if self.config.error_handling == ErrorHandling.STRICT:
-                raise
-            else:
-                result["error"] = error_context
-                
-        return result
-        
-    async def _execute_sequential(self, topic: str) -> Dict[str, Any]:
-        """Execute workflow in sequential mode"""
-        result = {}
-        
-        try:
-            # Research phase
-            research = await self.agents["internet"].search_web(topic)
-            result["research"] = research
+            # Combine results
+            workflow_results = {
+                "topic": topic,
+                "research": research_results,
+                "documentation": documentation,
+                "optimized_prompts": optimized_prompts
+            }
             
-            # Documentation generation
-            documentation = await self.agents["documentation"].generate_documentation(topic, research)
-            result["documentation"] = documentation
+            # Store execution history
+            self.execution_history.append(workflow_results)
             
-            # Prompt optimization
-            optimized = await self.agents["prompt"].optimize_prompt(documentation)
-            result["optimized"] = optimized
+            return workflow_results
             
         except Exception as e:
-            self.error_handler.handle_error(
-                e,
-                "execute_sequential",
-                ErrorSeverity.ERROR,
-                {"topic": topic}
-            )
+            logger.error(f"Error in workflow execution: {str(e)}")
             raise
-            
-        return result
-        
-    async def _execute_parallel(self, topic: str) -> Dict[str, Any]:
-        """Execute workflow in parallel mode"""
-        result = {}
-        
-        try:
-            tasks = [
-                self.agents["internet"].search_web(topic),
-                self.agents["documentation"].generate_documentation(topic, ""),
-                self.agents["prompt"].optimize_prompt("")
-            ]
-            
-            research, documentation, optimized = await asyncio.gather(*tasks)
-            
-            result["research"] = research
-            result["documentation"] = documentation
-            result["optimized"] = optimized
-            
-        except Exception as e:
-            self.error_handler.handle_error(
-                e,
-                "execute_parallel",
-                ErrorSeverity.ERROR,
-                {"topic": topic}
-            )
-            raise
-            
-        return result
-        
+
+    async def get_execution_status(self) -> Dict[str, Any]:
+        """Get the status of all executions."""
+        return {
+            "total_executions": len(self.execution_history),
+            "latest_execution": self.execution_history[-1] if self.execution_history else None,
+            "agent_status": {
+                name: "initialized" if agent else "not_initialized"
+                for name, agent in self.agents.items()
+            }
+        }
+
     async def cleanup(self):
-        """Clean up resources"""
+        """Clean up resources."""
         try:
             for agent in self.agents.values():
-                await agent.cleanup()
+                if hasattr(agent, 'cleanup'):
+                    await agent.cleanup()
+            logger.info("Cleanup completed successfully")
         except Exception as e:
-            self.error_handler.handle_error(
-                e,
-                "cleanup",
-                ErrorSeverity.WARNING
-            ) 
+            logger.error(f"Error during cleanup: {str(e)}")
+            raise
+
+    def create_context(self, topic: str, parent_context: Optional[RunContext] = None) -> RunContext:
+        """Create a new execution context."""
+        import time
+        context = RunContext(
+            topic=topic,
+            start_time=time.time(),
+            parent_context=parent_context,
+            metadata={}
+        )
+        self.context_store[topic] = context
+        return context
+
+    async def execute_parallel(self, context: RunContext, plans: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Execute multiple agents in parallel"""
+        tasks = []
+        for plan in plans:
+            agent_type = plan.get("agent_type")
+            if agent_type not in self.agents:
+                logger.error(f"Unknown agent type: {agent_type}")
+                continue
+
+            agent = self.agents[agent_type]
+            task = agent.execute(
+                context.topic,
+                plan.get("reasoning_effort", "balanced")
+            )
+            tasks.append(task)
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Process results
+        execution_results = {}
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Error in parallel execution: {str(result)}")
+                execution_results[f"task_{i}"] = {"error": str(result)}
+            else:
+                execution_results[f"task_{i}"] = {"result": result}
+
+        return execution_results
+
+    async def orchestrate_llm(self, context: RunContext) -> Dict[str, Any]:
+        """Orchestrate LLM-based execution flow"""
+        # First, research the topic
+        research_results = await self.agents["research"].execute(
+            context.topic,
+            "balanced"
+        )
+        
+        # Then, generate documentation
+        documentation = await self.agents["documentation"].execute(
+            context.topic,
+            "balanced"
+        )
+        
+        # Finally, optimize the documentation
+        optimized = await self.agents["prompt"].execute(
+            documentation,
+            "balanced"
+        )
+
+        return {
+            "research": research_results,
+            "documentation": documentation,
+            "optimized": optimized
+        }
+
+    async def evaluate_execution(self, results: Dict[str, Any]) -> Dict[str, Any]:
+        """Evaluate the success of an execution"""
+        success = all(
+            not isinstance(result.get("error"), str)
+            for result in results.values()
+        )
+        
+        return {
+            "success": success,
+            "results": results
+        } 

@@ -27,3 +27,20 @@
 2025-04-05 13:33:42 | INFO     | __main__:start_monitoring:111 - Starting monitoring dashboard on 0.0.0.0:8000
 2025-04-05 13:33:42 | INFO     | agents.monitoring:run_server:62 - Prometheus metrics server started on port 8000
 2025-04-05 13:36:53 | ERROR    | agents:<module>:57 - Failed to initialize monitoring system: name 'monitoring_server' is not defined
+2025-04-05 13:38:26 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-05 15:08:57.728 | ERROR    | __main__:execute_agent:79 - Error executing agent: 400: Invalid agent type
+2025-04-05 15:09:07.127 | ERROR    | __main__:execute_agent:79 - Error executing agent: 400: Invalid agent type
+2025-04-05 15:09:15.001 | ERROR    | __main__:execute_agent:79 - Error executing agent: 'research'
+2025-04-05 15:20:19.645 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-05 15:20:19.645 | INFO     | __main__:startup_event:45 - Agents initialized successfully
+2025-04-05 15:20:56.180 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-05 15:20:56.181 | INFO     | __main__:startup_event:45 - Agents initialized successfully
+2025-04-05 15:24:37.799 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-05 15:24:37.799 | INFO     | __main__:startup_event:45 - Agents initialized successfully
+2025-04-05 15:24:56.649 | ERROR    | __main__:execute_agent:90 - Error executing agent: 'InternetDocumentationAgent' object has no attribute 'execute'
+2025-04-05 15:25:51.573 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-05 15:25:51.573 | INFO     | __main__:startup_event:45 - Agents initialized successfully
+2025-04-05 15:29:30.771 | INFO     | __main__:<module>:106 - Starting server on port 3001
+2025-04-05 15:29:31.820 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-05 15:29:31.821 | INFO     | __main__:startup_event:50 - Agents initialized successfully
+2025-04-05 15:32:20.150 | ERROR    | agents.documentation_maker_agent:_store_in_github:136 - Error storing documentation in GitHub: Requires authentication: 401 {"message": "Requires authentication", "documentation_url": "https://docs.github.com/rest/users/users#get-the-authenticated-user", "status": "401"}

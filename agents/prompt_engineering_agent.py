@@ -1,12 +1,13 @@
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Any, List
-import json
-import os
-from pathlib import Path
+import asyncio
 from loguru import logger
-import openai
+from openai import AsyncOpenAI
 from dotenv import load_dotenv
+import os
+import json
+from pathlib import Path
 from .utils import rate_limit
 
 load_dotenv()
@@ -18,61 +19,154 @@ class OptimizationLevel(Enum):
 
 @dataclass
 class PromptConfig:
-    optimization_level: OptimizationLevel
-    template_version: str
-    parameters: Dict[str, Any]
+    optimization_level: OptimizationLevel = OptimizationLevel.BALANCED
+    template_version: str = "1.0"
+    parameters: Dict[str, Any] = None
     max_tokens: int = 2000
     temperature: float = 0.7
 
+    def __post_init__(self):
+        if self.parameters is None:
+            self.parameters = {}
+
 class PromptEngineeringAgent:
-    def __init__(self, config: PromptConfig):
-        self.config = config
-        self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    """Agent for optimizing prompts and managing templates"""
+    
+    def __init__(self):
+        self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.config = PromptConfig()
+        self.templates: Dict[str, Dict[str, Any]] = {}
+        self.responses: Dict[str, List[Dict[str, Any]]] = {}
         self.templates_dir = Path("templates")
         self.templates_dir.mkdir(exist_ok=True)
-        
-    async def optimize_prompt(self, prompt: str) -> str:
+        self._load_templates()
+
+    def _load_templates(self):
+        """Load templates from the templates directory"""
+        try:
+            for template_file in self.templates_dir.glob("*.json"):
+                with open(template_file, "r") as f:
+                    template_data = json.load(f)
+                    self.templates[template_data["id"]] = template_data
+        except Exception as e:
+            logger.error(f"Error loading templates: {str(e)}")
+
+    def add_template(self, template: Dict[str, Any]) -> str:
+        """Add a new template"""
+        try:
+            template_id = f"template_{len(self.templates)}"
+            template["id"] = template_id
+            self.templates[template_id] = template
+            
+            # Save to file
+            template_file = self.templates_dir / f"{template_id}.json"
+            with open(template_file, "w") as f:
+                json.dump(template, f, indent=2)
+            
+            return template_id
+        except Exception as e:
+            logger.error(f"Error adding template: {str(e)}")
+            raise
+
+    def update_template(self, template_id: str, new_template: Dict[str, Any]) -> None:
+        """Update an existing template"""
+        try:
+            if template_id not in self.templates:
+                raise ValueError(f"Template {template_id} not found")
+            
+            self.templates[template_id].update(new_template)
+            
+            # Save to file
+            template_file = self.templates_dir / f"{template_id}.json"
+            with open(template_file, "w") as f:
+                json.dump(self.templates[template_id], f, indent=2)
+        except Exception as e:
+            logger.error(f"Error updating template: {str(e)}")
+            raise
+
+    async def optimize_prompt(self, prompt: str, reasoning_effort: str = "balanced") -> Dict[str, Any]:
         """Optimize a prompt based on the configuration"""
         try:
-            if self.config.optimization_level == OptimizationLevel.MINIMAL:
-                return await self._minimal_optimization(prompt)
-            elif self.config.optimization_level == OptimizationLevel.BALANCED:
-                return await self._balanced_optimization(prompt)
-            else:
-                return await self._aggressive_optimization(prompt)
+            # Select optimization strategy based on level
+            strategy = self._get_optimization_strategy(reasoning_effort)
+            
+            # Optimize the prompt
+            response = await self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": strategy},
+                    {"role": "user", "content": f"Optimize this prompt: {prompt}"}
+                ],
+                temperature=self.config.temperature,
+                max_tokens=self.config.max_tokens
+            )
+            
+            optimized_prompt = response.choices[0].message.content
+            
+            # Evaluate the optimization
+            quality_score = await self._evaluate_optimization(prompt, optimized_prompt)
+            
+            # Track the response
+            self._track_response(prompt, optimized_prompt, quality_score)
+            
+            return {
+                "original_prompt": prompt,
+                "optimized_prompt": optimized_prompt,
+                "quality_score": quality_score,
+                "optimization_level": reasoning_effort
+            }
         except Exception as e:
             logger.error(f"Error optimizing prompt: {str(e)}")
-            return prompt
-    
-    @rate_limit(calls_per_minute=60)
-    async def _minimal_optimization(self, prompt: str) -> str:
-        """Perform minimal prompt optimization"""
-        return prompt.strip()
-    
-    @rate_limit(calls_per_minute=60)
-    async def _balanced_optimization(self, prompt: str) -> str:
-        """Perform balanced prompt optimization"""
-        response = await self.client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a prompt optimization expert."},
-                {"role": "user", "content": f"Optimize this prompt while maintaining its core meaning: {prompt}"}
-            ]
-        )
-        return response.choices[0].message.content
-    
-    @rate_limit(calls_per_minute=60)
-    async def _aggressive_optimization(self, prompt: str) -> str:
-        """Perform aggressive prompt optimization"""
-        response = await self.client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a prompt optimization expert. Optimize this prompt aggressively while maintaining its core meaning."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message.content
-    
+            return {"error": str(e)}
+
+    def _get_optimization_strategy(self, level: str) -> str:
+        """Get the optimization strategy based on the level"""
+        strategies = {
+            "minimal": "Make minimal changes to improve clarity while preserving the original intent.",
+            "balanced": "Balance clarity improvements with structural enhancements while maintaining the core message.",
+            "aggressive": "Comprehensively restructure and enhance the prompt for maximum effectiveness."
+        }
+        return strategies.get(level, strategies["balanced"])
+
+    async def _evaluate_optimization(self, original: str, optimized: str) -> float:
+        """Evaluate the quality of the optimization"""
+        try:
+            response = await self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Evaluate prompt optimization on a scale of 0-1."},
+                    {"role": "user", "content": f"Original: {original}\nOptimized: {optimized}"}
+                ],
+                temperature=0.3,
+                max_tokens=10
+            )
+            
+            score_text = response.choices[0].message.content.strip()
+            try:
+                return float(score_text)
+            except ValueError:
+                return 0.5
+        except Exception as e:
+            logger.error(f"Error evaluating optimization: {str(e)}")
+            return 0.5
+
+    def _track_response(self, original: str, optimized: str, score: float) -> None:
+        """Track the response for analysis"""
+        try:
+            response_id = f"response_{len(self.responses)}"
+            self.responses[response_id] = {
+                "original": original,
+                "optimized": optimized,
+                "score": score,
+                "timestamp": asyncio.get_event_loop().time()
+            }
+        except Exception as e:
+            logger.error(f"Error tracking response: {str(e)}")
+
+    async def execute(self, prompt: str, reasoning_effort: str = "balanced") -> Dict[str, Any]:
+        """Execute the prompt optimization process"""
+        return await self.optimize_prompt(prompt, reasoning_effort)
+
     def save_template(self, name: str, template: str):
         """Save a prompt template"""
         template_path = self.templates_dir / f"{name}_{self.config.template_version}.json"
