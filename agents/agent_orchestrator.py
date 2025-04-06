@@ -61,7 +61,7 @@ class AgentOrchestrator:
             logger.error(f"Error initializing agents: {str(e)}")
             raise
 
-    async def execute_workflow(self, topic: str) -> Dict[str, Any]:
+    async def execute_workflow(self, topic: str, reasoning_effort: str = "balanced") -> Dict[str, Any]:
         """Execute the complete research and documentation workflow."""
         try:
             # Initialize agents if not already done
@@ -79,7 +79,8 @@ class AgentOrchestrator:
             # Step 3: Optimize prompts
             logger.info("Optimizing prompts")
             optimized_prompts = await self.agents["prompt"].optimize_prompt(
-                f"Explain {topic} in detail"
+                f"Explain {topic} in detail",
+                reasoning_effort=reasoning_effort
             )
             
             # Combine results
@@ -97,7 +98,13 @@ class AgentOrchestrator:
             
         except Exception as e:
             logger.error(f"Error in workflow execution: {str(e)}")
-            raise
+            return {
+                "error": str(e),
+                "topic": topic,
+                "research": None,
+                "documentation": None,
+                "optimized_prompts": None
+            }
 
     async def get_execution_status(self) -> Dict[str, Any]:
         """Get the status of all executions."""
