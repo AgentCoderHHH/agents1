@@ -8,6 +8,7 @@ from agents.agent_orchestrator import AgentOrchestrator, OrchestratorConfig, Orc
 import os
 from dotenv import load_dotenv
 import json
+import uvicorn
 
 # Load environment variables
 load_dotenv()

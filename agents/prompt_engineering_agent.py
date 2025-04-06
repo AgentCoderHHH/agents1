@@ -17,20 +17,30 @@ class OptimizationLevel(Enum):
     BALANCED = "balanced"
     AGGRESSIVE = "aggressive"
 
+class PromptDomain(Enum):
+    TECHNICAL = "technical"
+    CREATIVE = "creative"
+    ANALYTICAL = "analytical"
+    GENERAL = "general"
+
 @dataclass
 class PromptConfig:
     optimization_level: OptimizationLevel = OptimizationLevel.BALANCED
-    template_version: str = "1.0"
+    domain: PromptDomain = PromptDomain.GENERAL
+    template_version: str = "2.0"
     parameters: Dict[str, Any] = None
     max_tokens: int = 2000
     temperature: float = 0.7
+    include_examples: bool = True
+    include_analogies: bool = True
+    include_technical_details: bool = True
 
     def __post_init__(self):
         if self.parameters is None:
             self.parameters = {}
 
 class PromptEngineeringAgent:
-    """Agent for optimizing prompts and managing templates"""
+    """Enhanced agent for optimizing prompts and managing templates"""
     
     def __init__(self):
         self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -40,6 +50,54 @@ class PromptEngineeringAgent:
         self.templates_dir = Path("templates")
         self.templates_dir.mkdir(exist_ok=True)
         self._load_templates()
+        self._initialize_domain_templates()
+
+    def _initialize_domain_templates(self):
+        """Initialize domain-specific templates"""
+        self.domain_templates = {
+            PromptDomain.TECHNICAL: {
+                "structure": [
+                    "Problem Definition",
+                    "Technical Context",
+                    "Implementation Details",
+                    "Best Practices",
+                    "Common Pitfalls",
+                    "Code Examples"
+                ],
+                "keywords": [
+                    "architecture", "implementation", "optimization",
+                    "performance", "scalability", "security"
+                ]
+            },
+            PromptDomain.CREATIVE: {
+                "structure": [
+                    "Theme",
+                    "Style",
+                    "Tone",
+                    "Imagery",
+                    "Emotional Impact",
+                    "Originality"
+                ],
+                "keywords": [
+                    "imagination", "expression", "style",
+                    "tone", "metaphor", "symbolism"
+                ]
+            },
+            PromptDomain.ANALYTICAL: {
+                "structure": [
+                    "Problem Statement",
+                    "Data Analysis",
+                    "Methodology",
+                    "Findings",
+                    "Conclusions",
+                    "Recommendations"
+                ],
+                "keywords": [
+                    "analysis", "evaluation", "comparison",
+                    "trends", "patterns", "insights"
+                ]
+            }
+        }
 
     def _load_templates(self):
         """Load templates from the templates directory"""
@@ -85,17 +143,32 @@ class PromptEngineeringAgent:
             raise
 
     async def optimize_prompt(self, prompt: str, reasoning_effort: str = "balanced") -> Dict[str, Any]:
-        """Optimize a prompt based on the configuration"""
+        """Enhanced prompt optimization with domain-specific improvements"""
         try:
-            # Select optimization strategy based on level
-            strategy = self._get_optimization_strategy(reasoning_effort)
+            # Analyze the prompt to determine domain
+            domain = await self._analyze_prompt_domain(prompt)
+            self.config.domain = domain
             
-            # Optimize the prompt
+            # Get domain-specific optimization strategy
+            strategy = self._get_optimization_strategy(reasoning_effort, domain.value)
+            
+            # Optimize the prompt with enhanced context
             response = await self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": strategy},
-                    {"role": "user", "content": f"Optimize this prompt: {prompt}"}
+                    {"role": "user", "content": f"""
+                    Original prompt: {prompt}
+                    
+                    Please optimize this prompt considering:
+                    1. Domain: {domain.value}
+                    2. Level: {reasoning_effort}
+                    3. Include examples: {self.config.include_examples}
+                    4. Include analogies: {self.config.include_analogies}
+                    5. Include technical details: {self.config.include_technical_details}
+                    
+                    Provide a comprehensive optimized version that maintains the original intent while enhancing clarity, specificity, and effectiveness.
+                    """}
                 ],
                 temperature=self.config.temperature,
                 max_tokens=self.config.max_tokens
@@ -103,61 +176,181 @@ class PromptEngineeringAgent:
             
             optimized_prompt = response.choices[0].message.content
             
-            # Evaluate the optimization
-            quality_score = await self._evaluate_optimization(prompt, optimized_prompt)
+            # Evaluate the optimization with enhanced criteria
+            quality_score = await self._evaluate_optimization(prompt, optimized_prompt, domain)
             
-            # Track the response
-            self._track_response(prompt, optimized_prompt, quality_score)
+            # Track the response with additional metadata
+            self._track_response(prompt, optimized_prompt, quality_score, domain)
             
             return {
                 "original_prompt": prompt,
                 "optimized_prompt": optimized_prompt,
                 "quality_score": quality_score,
-                "optimization_level": reasoning_effort
+                "optimization_level": reasoning_effort,
+                "domain": domain.value,
+                "improvements": await self._analyze_improvements(prompt, optimized_prompt)
             }
         except Exception as e:
             logger.error(f"Error optimizing prompt: {str(e)}")
             return {"error": str(e)}
 
-    def _get_optimization_strategy(self, level: str) -> str:
-        """Get the optimization strategy based on the level"""
-        strategies = {
-            "minimal": "Make minimal changes to improve clarity while preserving the original intent.",
-            "balanced": "Balance clarity improvements with structural enhancements while maintaining the core message.",
-            "aggressive": "Comprehensively restructure and enhance the prompt for maximum effectiveness."
+    def _get_optimization_strategy(self, level: str, domain: str) -> str:
+        """Get the optimization strategy based on level and domain"""
+        base_strategies = {
+            "minimal": """
+            Make minimal but effective changes to improve clarity while preserving the original intent.
+            Focus on:
+            1. Grammar and syntax improvements
+            2. Basic clarity enhancements
+            3. Minor structural adjustments
+            """,
+            "balanced": """
+            Balance clarity improvements with structural enhancements while maintaining the core message.
+            Focus on:
+            1. Clear problem definition
+            2. Logical structure
+            3. Specific requirements
+            4. Contextual relevance
+            """,
+            "aggressive": """
+            Comprehensively restructure and enhance the prompt for maximum effectiveness.
+            Focus on:
+            1. Detailed problem breakdown
+            2. Comprehensive context
+            3. Specific examples and analogies
+            4. Clear success criteria
+            5. Technical depth where appropriate
+            """
         }
-        return strategies.get(level, strategies["balanced"])
 
-    async def _evaluate_optimization(self, original: str, optimized: str) -> float:
-        """Evaluate the quality of the optimization"""
+        domain_specific = {
+            "technical": """
+            Ensure the prompt:
+            1. Includes specific technical requirements
+            2. References relevant technologies or frameworks
+            3. Specifies performance criteria
+            4. Includes error handling considerations
+            5. Mentions scalability requirements
+            """,
+            "creative": """
+            Ensure the prompt:
+            1. Establishes clear creative direction
+            2. Specifies style and tone
+            3. Includes emotional or thematic elements
+            4. References artistic influences
+            5. Sets originality criteria
+            """,
+            "analytical": """
+            Ensure the prompt:
+            1. Defines clear analysis objectives
+            2. Specifies data sources and methods
+            3. Sets evaluation criteria
+            4. Includes comparison frameworks
+            5. Defines success metrics
+            """
+        }
+
+        base_strategy = base_strategies.get(level, base_strategies["balanced"])
+        domain_strategy = domain_specific.get(domain, "")
+        
+        return f"{base_strategy}\n{domain_strategy}"
+
+    async def _analyze_prompt_domain(self, prompt: str) -> PromptDomain:
+        """Analyze the prompt to determine its domain"""
         try:
             response = await self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "Evaluate prompt optimization on a scale of 0-1."},
-                    {"role": "user", "content": f"Original: {original}\nOptimized: {optimized}"}
+                    {"role": "system", "content": "Analyze the prompt and determine its primary domain."},
+                    {"role": "user", "content": f"Prompt: {prompt}\n\nClassify this prompt as either technical, creative, analytical, or general."}
                 ],
                 temperature=0.3,
                 max_tokens=10
             )
             
-            score_text = response.choices[0].message.content.strip()
-            try:
-                return float(score_text)
-            except ValueError:
-                return 0.5
+            domain_text = response.choices[0].message.content.strip().lower()
+            return PromptDomain(domain_text)
+        except Exception as e:
+            logger.error(f"Error analyzing prompt domain: {str(e)}")
+            return PromptDomain.GENERAL
+
+    async def _evaluate_optimization(self, original: str, optimized: str, domain: PromptDomain) -> Dict[str, float]:
+        """Enhanced evaluation of prompt optimization"""
+        try:
+            response = await self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": f"""
+                    Evaluate the prompt optimization on multiple criteria (0-1 scale).
+                    Consider the domain: {domain.value}
+                    """},
+                    {"role": "user", "content": f"""
+                    Original: {original}
+                    Optimized: {optimized}
+                    
+                    Evaluate on:
+                    1. Clarity
+                    2. Specificity
+                    3. Completeness
+                    4. Domain Relevance
+                    5. Effectiveness
+                    """}
+                ],
+                temperature=0.3,
+                max_tokens=100
+            )
+            
+            evaluation_text = response.choices[0].message.content
+            scores = self._parse_evaluation_scores(evaluation_text)
+            
+            return {
+                "overall": sum(scores.values()) / len(scores),
+                **scores
+            }
         except Exception as e:
             logger.error(f"Error evaluating optimization: {str(e)}")
-            return 0.5
+            return {"overall": 0.5}
 
-    def _track_response(self, original: str, optimized: str, score: float) -> None:
-        """Track the response for analysis"""
+    def _parse_evaluation_scores(self, evaluation_text: str) -> Dict[str, float]:
+        """Parse evaluation scores from the response text"""
+        scores = {}
+        for line in evaluation_text.split("\n"):
+            if ":" in line:
+                criterion, score = line.split(":")
+                try:
+                    scores[criterion.strip().lower()] = float(score.strip())
+                except ValueError:
+                    continue
+        return scores
+
+    async def _analyze_improvements(self, original: str, optimized: str) -> List[str]:
+        """Analyze specific improvements made to the prompt"""
+        try:
+            response = await self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "List specific improvements made to the prompt."},
+                    {"role": "user", "content": f"Original: {original}\nOptimized: {optimized}\n\nList the key improvements made:"}
+                ],
+                temperature=0.3,
+                max_tokens=200
+            )
+            
+            improvements_text = response.choices[0].message.content
+            return [imp.strip() for imp in improvements_text.split("\n") if imp.strip()]
+        except Exception as e:
+            logger.error(f"Error analyzing improvements: {str(e)}")
+            return []
+
+    def _track_response(self, original: str, optimized: str, quality_score: Dict[str, float], domain: PromptDomain) -> None:
+        """Enhanced response tracking with domain and detailed scores"""
         try:
             response_id = f"response_{len(self.responses)}"
             self.responses[response_id] = {
                 "original": original,
                 "optimized": optimized,
-                "score": score,
+                "scores": quality_score,
+                "domain": domain.value,
                 "timestamp": asyncio.get_event_loop().time()
             }
         except Exception as e:

@@ -44,3 +44,90 @@
 2025-04-05 15:29:31.820 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
 2025-04-05 15:29:31.821 | INFO     | __main__:startup_event:50 - Agents initialized successfully
 2025-04-05 15:32:20.150 | ERROR    | agents.documentation_maker_agent:_store_in_github:136 - Error storing documentation in GitHub: Requires authentication: 401 {"message": "Requires authentication", "documentation_url": "https://docs.github.com/rest/users/users#get-the-authenticated-user", "status": "401"}
+2025-04-06 06:57:34.214 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 06:57:34.214 | INFO     | server:startup_event:50 - Agents initialized successfully
+2025-04-06 06:57:44.994 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 07:04:25.416 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:04:41.751 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:05:01.878 | ERROR    | agents.documentation_maker_agent:_store_in_github:136 - Error storing documentation in GitHub: Requires authentication: 401 {"message": "Requires authentication", "documentation_url": "https://docs.github.com/rest/users/users#get-the-authenticated-user", "status": "401"}
+2025-04-06 07:05:01.879 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:05:04.022 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:05:17.684 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:05:40.953 | ERROR    | agents.documentation_maker_agent:_store_in_github:136 - Error storing documentation in GitHub: Requires authentication: 401 {"message": "Requires authentication", "documentation_url": "https://docs.github.com/rest/users/users#get-the-authenticated-user", "status": "401"}
+2025-04-06 07:05:40.955 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:09:30.021 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:09:30.022 | INFO     | server:startup_event:50 - Agents initialized successfully
+2025-04-06 07:09:46.374 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:10:01.961 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:10:22.708 | ERROR    | agents.documentation_maker_agent:_store_in_github:136 - Error storing documentation in GitHub: 404 {"message": "Not Found", "documentation_url": "https://docs.github.com/rest/repos/repos#get-a-repository", "status": "404"}
+2025-04-06 07:10:22.709 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:11:17.311 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 07:11:39.595 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:11:41.243 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:11:41.244 | INFO     | server:startup_event:50 - Agents initialized successfully
+2025-04-06 07:11:57.490 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:12:14.671 | ERROR    | agents.documentation_maker_agent:_store_in_github:136 - Error storing documentation in GitHub: 404 {"message": "Not Found", "documentation_url": "https://docs.github.com/rest/repos/repos#get-a-repository", "status": "404"}
+2025-04-06 07:12:14.672 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:13:17.819 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 07:13:34.412 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:13:34.413 | INFO     | server:startup_event:50 - Agents initialized successfully
+2025-04-06 07:14:09.924 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 07:14:17.626 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:14:17.627 | INFO     | server:startup_event:50 - Agents initialized successfully
+2025-04-06 07:14:24.125 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:14:38.588 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:14:56.779 | ERROR    | agents.documentation_maker_agent:_store_in_github:136 - Error storing documentation in GitHub: 404 {"message": "Not Found", "documentation_url": "https://docs.github.com/rest", "status": "404"}
+2025-04-06 07:14:56.779 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:15:49.506 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:16:08.963 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:16:27.566 | ERROR    | agents.documentation_maker_agent:_store_in_github:136 - Error storing documentation in GitHub: 404 {"message": "Not Found", "documentation_url": "https://docs.github.com/rest", "status": "404"}
+2025-04-06 07:16:27.567 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:18:40.245 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 07:18:54.155 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:18:54.155 | INFO     | server:startup_event:50 - Agents initialized successfully
+2025-04-06 07:20:32.284 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:20:49.253 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:21:15.156 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:22:19.109 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 07:22:24.147 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:22:24.147 | INFO     | server:startup_event:50 - Agents initialized successfully
+2025-04-06 07:22:32.431 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:22:47.079 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:22:48.460 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:23:05.712 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:23:10.824 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:23:27.723 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:26:03.739 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 07:26:09.587 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:26:09.588 | INFO     | server:startup_event:55 - Agents initialized successfully
+2025-04-06 07:26:10.769 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:26:30.067 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:26:49.336 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:29:45.205 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 07:29:53.217 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:29:53.222 | INFO     | server:startup_event:55 - Agents initialized successfully
+2025-04-06 07:29:58.328 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Marketing Community Agents
+2025-04-06 07:30:20.126 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:30:42.514 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:46:29.253 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:46:29.260 | INFO     | server:startup_event:55 - Agents initialized successfully
+2025-04-06 07:47:30.774 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Planning Agent in agentic world
+2025-04-06 07:47:57.099 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 07:48:23.123 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 07:56:29.271 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:56:29.272 | INFO     | server:startup_event:55 - Agents initialized successfully
+2025-04-06 07:58:03.046 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:58:03.046 | INFO     | server:startup_event:55 - Agents initialized successfully
+2025-04-06 07:58:38.729 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 07:58:38.730 | INFO     | server:startup_event:55 - Agents initialized successfully
+2025-04-06 07:59:23.977 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 08:00:28.684 | INFO     | __main__:<module>:145 - Starting server on port 3001
+2025-04-06 08:01:44.527 | INFO     | __main__:<module>:145 - Starting server on port 3001
+2025-04-06 08:03:12.663 | INFO     | __main__:<module>:146 - Starting server on port 3001
+2025-04-06 08:03:13.747 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 08:03:13.748 | INFO     | __main__:startup_event:56 - Agents initialized successfully
+2025-04-06 08:03:20.693 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 08:04:20.664 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Agents in the Agentic World
+2025-04-06 08:04:40.579 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 08:05:02.198 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 08:05:16.216 | ERROR    | agents.prompt_engineering_agent:_evaluate_optimization:311 - Error evaluating optimization: division by zero
