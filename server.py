@@ -1,13 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
-import uvicorn
+from typing import Optional, Dict, Any
 from loguru import logger
-from agents.agent_orchestrator import AgentOrchestrator
 import asyncio
+from agents.agent_orchestrator import AgentOrchestrator, OrchestratorConfig, OrchestratorMode
 import os
 from dotenv import load_dotenv
+import json
 
 # Load environment variables
 load_dotenv()
@@ -28,19 +28,24 @@ app.add_middleware(
 )
 
 # Initialize orchestrator
-orchestrator = AgentOrchestrator()
+orchestrator = AgentOrchestrator(
+    config=OrchestratorConfig(
+        mode=OrchestratorMode.SEQUENTIAL,
+        max_retries=3,
+        timeout_seconds=300,
+        max_concurrent_tasks=3
+    )
+)
 
 class ExecuteRequest(BaseModel):
     topic: str
-    agent_type: Optional[str] = None
     reasoning_effort: Optional[str] = "balanced"
-    parameters: Optional[Dict[str, Any]] = None
-    parallel_tasks: Optional[List[Dict[str, Any]]] = None
 
-class ExecuteResponse(BaseModel):
-    success: bool
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+class TestResponse(BaseModel):
+    message: str
+
+class HealthResponse(BaseModel):
+    status: str
 
 @app.on_event("startup")
 async def startup_event():
@@ -52,53 +57,87 @@ async def startup_event():
         logger.error(f"Error initializing agents: {str(e)}")
         raise
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
+def format_response_for_terminal(result: Dict[str, Any]) -> str:
+    """Format the response for terminal display"""
+    output = []
+    
+    # Research Agent Response
+    if "research" in result:
+        output.append("\n=== Research Agent Response ===")
+        research = result["research"]
+        if isinstance(research, dict):
+            for key, value in research.items():
+                if key == "overview":
+                    output.append(f"\nOverview:\n{value}")
+                elif key == "sections":
+                    output.append("\nSections:")
+                    for section in value:
+                        output.append(f"- {section}")
+                elif key == "examples":
+                    output.append("\nExamples:")
+                    for example in value:
+                        output.append(f"- {example}")
+                elif key == "references":
+                    output.append("\nReferences:")
+                    for ref in value:
+                        output.append(f"- {ref}")
+    
+    # Documentation Agent Response
+    if "documentation" in result:
+        output.append("\n=== Documentation Agent Response ===")
+        doc = result["documentation"]
+        if isinstance(doc, dict):
+            output.append(f"\nDocumentation (Quality Score: {doc.get('quality_score', 'N/A')}):")
+            output.append(doc.get("documentation", ""))
+    
+    # Prompt Engineering Agent Response
+    if "optimized_prompts" in result:
+        output.append("\n=== Prompt Engineering Agent Response ===")
+        prompts = result["optimized_prompts"]
+        if isinstance(prompts, dict):
+            output.append(f"\nOriginal Prompt: {prompts.get('original_prompt', 'N/A')}")
+            output.append(f"Optimized Prompt: {prompts.get('optimized_prompt', 'N/A')}")
+            output.append(f"Quality Score: {prompts.get('quality_score', 'N/A')}")
+            output.append(f"Optimization Level: {prompts.get('optimization_level', 'N/A')}")
+    
+    return "\n".join(output)
+
+@app.post("/execute")
+async def execute(request: ExecuteRequest) -> Dict[str, Any]:
+    """Execute the multi-agent workflow"""
+    try:
+        # Execute workflow
+        result = await orchestrator.execute_workflow(
+            request.topic,
+            reasoning_effort=request.reasoning_effort
+        )
+        
+        # Format and print the response
+        formatted_response = format_response_for_terminal(result)
+        print(formatted_response)
+        
+        return {
+            "success": True,
+            "result": result,
+            "error": None
+        }
+    except Exception as e:
+        logger.error(f"Error executing workflow: {str(e)}")
+        return {
+            "success": False,
+            "result": None,
+            "error": str(e)
+        }
 
 @app.get("/test")
-async def test_endpoint():
+async def test() -> TestResponse:
     """Test endpoint"""
-    return {"message": "API is working"}
+    return TestResponse(message="API is working")
 
-@app.post("/execute", response_model=ExecuteResponse)
-async def execute_agent(request: ExecuteRequest):
-    """Execute an agent or multiple agents with the given topic and parameters"""
-    try:
-        context = orchestrator.create_context(request.topic)
-        
-        if request.parallel_tasks:
-            # Execute multiple agents in parallel
-            results = await orchestrator.execute_parallel(context, request.parallel_tasks)
-        elif request.agent_type:
-            # Execute a single agent
-            if request.agent_type not in orchestrator.agents:
-                raise HTTPException(status_code=400, detail="Invalid agent type")
-            
-            agent = orchestrator.agents[request.agent_type]
-            if request.agent_type == "research":
-                results = await agent.research_topic(request.topic)
-            elif request.agent_type == "documentation":
-                results = await agent.generate_documentation(request.topic)
-            elif request.agent_type == "prompt":
-                results = await agent.optimize_prompt(request.topic)
-            else:
-                raise HTTPException(status_code=400, detail="Invalid agent type")
-        else:
-            # Execute the full workflow
-            results = await orchestrator.execute_workflow(request.topic)
-        
-        return ExecuteResponse(
-            success=True,
-            result=results
-        )
-    except Exception as e:
-        logger.error(f"Error executing agent: {str(e)}")
-        return ExecuteResponse(
-            success=False,
-            error=str(e)
-        )
+@app.get("/health")
+async def health() -> HealthResponse:
+    """Health check endpoint"""
+    return HealthResponse(status="healthy")
 
 if __name__ == "__main__":
     # Get port from environment variable, default to 3001 if not set
