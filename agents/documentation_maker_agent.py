@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from pathlib import Path
 from .utils import rate_limit
-from github import Github
-import base64
 
 load_dotenv()
 
@@ -30,7 +28,6 @@ class DocumentationMakerAgent:
     
     def __init__(self):
         self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.github = Github(os.getenv("GITHUB_TOKEN"))
         self.config = DocumentationConfig()
         self.templates_dir = Path("templates")
         self.templates_dir.mkdir(exist_ok=True)
@@ -54,10 +51,6 @@ class DocumentationMakerAgent:
             
             # Assess documentation quality
             quality_score = await self._assess_quality(documentation, topic)
-            
-            # Store in GitHub if quality is good
-            if quality_score >= 0.8:
-                await self._store_in_github(topic, documentation)
             
             return {
                 "documentation": documentation,
@@ -103,37 +96,6 @@ class DocumentationMakerAgent:
         except Exception as e:
             logger.error(f"Error assessing documentation quality: {str(e)}")
             return 0.5
-
-    async def _store_in_github(self, topic: str, documentation: str) -> None:
-        """Store documentation in GitHub repository"""
-        try:
-            repo_name = os.getenv("GITHUB_REPO", "documentation")
-            repo = self.github.get_user().get_repo(repo_name)
-            
-            # Create a filename from the topic
-            filename = f"docs/{topic.lower().replace(' ', '_')}.md"
-            
-            # Check if file exists
-            try:
-                contents = repo.get_contents(filename)
-                # Update existing file
-                repo.update_file(
-                    filename,
-                    f"Update documentation for {topic}",
-                    documentation,
-                    contents.sha
-                )
-            except:
-                # Create new file
-                repo.create_file(
-                    filename,
-                    f"Add documentation for {topic}",
-                    documentation
-                )
-            
-            logger.info(f"Documentation stored in GitHub: {filename}")
-        except Exception as e:
-            logger.error(f"Error storing documentation in GitHub: {str(e)}")
 
     async def execute(self, topic: str, reasoning_effort: str = "balanced") -> Dict[str, Any]:
         """Execute the documentation generation process"""
