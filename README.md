@@ -1,385 +1,177 @@
-# Agent System Documentation
+# Agent System
 
-## Table of Contents
-1. [Overview](#overview)
-2. [System Architecture](#system-architecture)
-3. [Agents](#agents)
-   - [InternetDocumentationAgent](#internetdocumentationagent)
-   - [DocumentationMakerAgent](#documentationmakeragent)
-   - [PromptEngineeringAgent](#promptengineeringagent)
-   - [AgentOrchestrator](#agentorchestrator)
-4. [Implementation Guide](#implementation-guide)
-5. [Security and Best Practices](#security-and-best-practices)
-6. [Progress Tracking](#progress-tracking)
-7. [Testing](#testing)
-8. [Deployment](#deployment)
+A comprehensive agent-based system for managing goals, tasks, and progress tracking with AI-powered assistance.
 
-## Overview
+## Features
 
-The Agent System is a sophisticated AI-powered documentation and research platform that combines multiple specialized agents to create, manage, and optimize technical documentation.
+- **Goal Management**: Create, track, and manage organizational goals
+- **Task Management**: Assign, track, and manage tasks with dependencies
+- **Progress Tracking**: Monitor progress towards goals and tasks
+- **AI Integration**: Leverage OpenAI's GPT models for intelligent assistance
+- **Data Management**: Store and manage data in MongoDB and PostgreSQL
+- **API Support**: REST and GraphQL APIs for flexible integration
+- **Security**: JWT-based authentication and role-based authorization
+- **Caching**: Efficient data caching for improved performance
 
-## System Architecture
+## Architecture
 
-The system is built on a modular architecture with four main components:
+The system is built with a modular architecture:
 
-1. **InternetDocumentationAgent**: Handles web research and content extraction
-2. **DocumentationMakerAgent**: Generates and structures documentation
-3. **PromptEngineeringAgent**: Optimizes AI interactions
-4. **AgentOrchestrator**: Coordinates agent activities
+- **Agents**: Specialized components for different functionalities
+  - **Management Agents**
+    - Progress Tracker Agent: Monitors and reports on goal progress
+    - Goal Alignment Agent: Ensures alignment with organizational objectives
+    - Task Management Agent: Manages task assignments and dependencies
+  - **Research Agents**
+    - Internet Documentation Agent: Handles web research and content extraction
+    - Documentation Maker Agent: Generates and structures documentation
+    - Prompt Engineering Agent: Optimizes AI interactions
+  - **Analytics Agents**
+    - Data Analysis Agent: Processes and analyzes data
+    - Performance Tracking Agent: Monitors system performance
+  - **Community Agents**
+    - Community Manager Agent: Manages community interactions
+    - Feedback Agent: Collects and processes user feedback
+  - **Documentation Agents**
+    - Documentation Generator Agent: Creates technical documentation
+    - Knowledge Base Agent: Maintains and updates knowledge base
 
-## Agents
+- **Data Sources**: Support for multiple data storage options
+  - MongoDB for document storage
+  - PostgreSQL for relational data
 
-### InternetDocumentationAgent
+- **APIs**: Multiple interface options
+  - REST API for traditional integration
+  - GraphQL API for flexible querying
 
-#### Web Research Capabilities
-- Browser automation using Selenium/Playwright
-- Search engine integration (Google, Bing, etc.)
-- Content extraction using BeautifulSoup
-- Credibility assessment using NLP
-- GitHub integration for documentation storage
+## Installation
 
-#### Implementation Details
-```python
-from dataclasses import dataclass
-from typing import List
-
-@dataclass
-class WebResearchConfig:
-    search_engines: List[str]
-    content_filters: List[str]
-    credibility_threshold: float
-    browser_type: str = "chrome"  # or "firefox", "edge"
-    headless: bool = True
-```
-
-### DocumentationMakerAgent
-
-#### AI-Powered Documentation
-- Research phase management
-- Content structure creation
-- Technical writing generation
-- Quality assessment and verification
-
-#### Implementation Details
-```python
-from enum import Enum
-from dataclasses import dataclass
-from typing import Literal
-
-class TechnicalLevel(Enum):
-    BEGINNER = "beginner"
-    INTERMEDIATE = "intermediate"
-    ADVANCED = "advanced"
-
-@dataclass
-class DocumentationConfig:
-    target_audience: str
-    technical_level: TechnicalLevel
-    format: Literal["markdown", "html", "pdf"]
-    language: str = "en"
-    style_guide: str = "default"
-```
-
-### PromptEngineeringAgent
-
-#### Prompt Optimization
-- Template management and versioning
-- Dynamic parameter handling
-- Optimization strategies
-- Performance tracking
-
-#### Implementation Details
-```python
-from enum import Enum
-from dataclasses import dataclass
-from typing import Dict, Any
-
-class OptimizationLevel(Enum):
-    MINIMAL = "minimal"
-    BALANCED = "balanced"
-    AGGRESSIVE = "aggressive"
-
-@dataclass
-class PromptConfig:
-    optimization_level: OptimizationLevel
-    template_version: str
-    parameters: Dict[str, Any]
-    max_tokens: int = 2000
-    temperature: float = 0.7
-```
-
-### AgentOrchestrator
-
-#### Multi-Agent Management
-- Agent registration and coordination
-- Context sharing between agents
-- Execution pattern management
-- Performance evaluation
-
-#### Implementation Details
-```python
-from enum import Enum
-from dataclasses import dataclass
-from typing import List, Dict
-
-class ExecutionMode(Enum):
-    SEQUENTIAL = "sequential"
-    PARALLEL = "parallel"
-
-class ErrorHandling(Enum):
-    STRICT = "strict"
-    LENIENT = "lenient"
-
-@dataclass
-class OrchestratorConfig:
-    execution_mode: ExecutionMode
-    context_sharing: bool
-    error_handling: ErrorHandling
-    max_retries: int = 3
-    timeout: int = 300  # seconds
-```
-
-## Implementation Guide
-
-### Prerequisites
-- Python 3.9+
-- OpenAI API access
-- GitHub repository for documentation storage
-- Required Python packages:
-  - selenium/playwright
-  - beautifulsoup4
-  - openai
-  - python-dotenv
-  - requests
-  - PyGithub
-  - spacy (for NLP)
-
-### Setup
-1. Clone the repository
-```bash
-git clone <repository-url>
-cd AgentOpenApi
-```
-
-2. Create and activate virtual environment
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-4. Configure environment variables
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-5. Initialize agents
-```bash
-python -m agents.initialize
-```
-
-### Configuration
-See `.env.example` for required environment variables.
-
-## Security and Best Practices
-
-- API key management using environment variables
-- Rate limiting implementation
-- Error handling and logging
-- Data validation using Pydantic
-- Secure storage practices
-- Regular dependency updates
-- Code linting and formatting (black, flake8)
-
-## Testing
-
-### Running Tests
-The project uses pytest for testing. To run the tests:
-
-```bash
-# Run all tests
-python run_tests.py
-
-# Run only unit tests
-python run_tests.py --unit
-
-# Run only integration tests
-python run_tests.py --integration
-
-# Run tests with coverage report
-python run_tests.py --coverage
-
-# Run tests verbosely
-python run_tests.py -v
-
-# Stop on first failure
-python run_tests.py --failfast
-```
-
-### Test Structure
-- `tests/`: Main test directory
-  - `conftest.py`: Shared test fixtures and configuration
-  - `test_error_handler.py`: Tests for error handling system
-  - `test_rate_limiter.py`: Tests for rate limiting functionality
-  - `test_agent_orchestrator.py`: Tests for agent coordination
-  - Additional test files for each agent
-
-### Test Coverage
-Coverage reports are generated in HTML format in the `htmlcov` directory when running tests with the `--coverage` flag.
-
-### Writing Tests
-When writing new tests:
-1. Use appropriate markers (`@pytest.mark.unit` or `@pytest.mark.integration`)
-2. Use shared fixtures from `conftest.py`
-3. Mock external dependencies
-4. Follow the existing test structure and naming conventions
-
-## Deployment
-
-### Prerequisites
-- Python 3.9 or higher
-- Virtual environment support
-- (Optional) Systemd for Linux production deployment
-
-### Installation
 1. Clone the repository:
-```bash
-git clone <repository-url>
-cd AgentOpenApi
-```
+   ```bash
+   git clone https://github.com/yourusername/agent-system.git
+   cd agent-system
+   ```
 
-2. Run the deployment script:
-```bash
-# For development environment
-python scripts/deploy.py --env development
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-# For production environment
-python scripts/deploy.py --env production
-```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-3. Update the `.env` file with your configuration.
+4. Create a `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+   Edit the `.env` file with your configuration.
 
-4. Start the application:
-- For development:
-```bash
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-python -m agents.main
-```
-- For production on Linux:
-```bash
-sudo systemctl start agent-system
-sudo systemctl enable agent-system  # Start on boot
-```
+5. Set up databases:
+   - Install and configure MongoDB
+   - Install and configure PostgreSQL
+   - Create the necessary databases and users
 
-### Monitoring
+## Usage
 
-The system includes comprehensive monitoring and logging:
+1. Start the server:
+   ```bash
+   python -m agents.main
+   ```
 
-#### Metrics
-- Prometheus metrics available at `http://localhost:8000`
-- Metrics include:
-  - API call counts
-  - Error rates
-  - Operation durations
-  - Active operations
+2. Access the APIs:
+   - REST API: http://localhost:8000/api/docs
+   - GraphQL API: http://localhost:8000/graphql
 
-#### Logging
-- Application logs: `logs/agent_system.log`
-- Error logs: `logs/errors.log`
-- Log features:
-  - Rotation (500MB for system, 100MB for errors)
-  - Compression
-  - Retention policies (10 days for system, 7 days for errors)
-  - Structured logging with context
+3. Example API calls:
 
-## Progress Tracking
+   **REST API**:
+   ```bash
+   # Create a goal
+   curl -X POST "http://localhost:8000/api/goals" \
+     -H "Authorization: Bearer your_token" \
+     -H "Content-Type: application/json" \
+     -d '{"title": "Project Completion", "description": "Complete the project on time"}'
 
-### Current Status
-- [x] Project structure setup
-- [x] InternetDocumentationAgent implementation
-- [x] DocumentationMakerAgent implementation
-- [x] PromptEngineeringAgent implementation
-- [x] AgentOrchestrator implementation
-- [x] Basic example script
-- [x] Rate limiting implementation
-- [x] Error handling system
-- [x] Testing suite implementation
-- [x] Monitoring and logging system
-- [x] Deployment system
-- [ ] CI/CD pipeline
+   # Get goals
+   curl "http://localhost:8000/api/goals" \
+     -H "Authorization: Bearer your_token"
+   ```
 
-### Documentation Progress
-- [x] Initial structure setup
-- [x] Agent-specific documentation
-- [x] Implementation guides
-- [x] API documentation
-- [x] Security guidelines
-- [x] Best practices
-- [x] Examples and tutorials
-- [x] Testing documentation
-- [x] Deployment documentation
-- [x] Monitoring documentation
+   **GraphQL API**:
+   ```graphql
+   # Create a goal
+   mutation {
+     createGoal(
+       title: "Project Completion"
+       description: "Complete the project on time"
+     ) {
+       id
+       title
+       status
+     }
+   }
 
-### Next Steps
-1. Add more examples and use cases
-2. Implement CI/CD pipeline
-3. Add performance optimization features
-4. Implement user interface for monitoring
+   # Get goals
+   query {
+     goals {
+       id
+       title
+       status
+     }
+   }
+   ```
+
+## Development
+
+1. Set up development environment:
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+2. Run tests:
+   ```bash
+   pytest
+   ```
+
+3. Run linter:
+   ```bash
+   flake8
+   ```
+
+4. Run type checker:
+   ```bash
+   mypy .
+   ```
+
+## Security
+
+- All API endpoints require authentication
+- JWT tokens are used for authentication
+- Role-based access control is implemented
+- Passwords are hashed using bcrypt
+- CORS is configured for security
+
+## Monitoring
+
+- Logs are stored in `logs/agent_system.log`
+- System status can be checked via the `/api/status` endpoint
+- Performance metrics are available through the analytics agent
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Examples
+## Support
 
-The project includes several example scripts that demonstrate different use cases of the Agent System:
-
-### 1. API Documentation Generation
-```bash
-python examples/generate_api_docs.py
-```
-This script generates comprehensive API documentation for a given topic. It's particularly useful for:
-- REST API documentation
-- Library/framework API references
-- API integration guides
-
-### 2. Technical Tutorial Generation
-```bash
-python examples/generate_tutorial.py
-```
-This script creates step-by-step tutorials for technical topics. It's ideal for:
-- Programming language tutorials
-- Framework getting-started guides
-- Technical concept explanations
-
-### 3. Technical Documentation Generation
-```bash
-python examples/generate_tech_docs.py
-```
-This script generates detailed technical documentation for programming languages or frameworks. It's perfect for:
-- Framework documentation
-- Language reference guides
-- Technical specification documents
-
-### Example Output
-Each script will:
-1. Prompt for a topic
-2. Research the topic using multiple sources
-3. Generate comprehensive documentation
-4. Display performance metrics
-5. Output the generated content
-
-### Usage Tips
-- Ensure your `.env` file is properly configured with API keys
-- Be specific with your topic input for better results
-- Monitor the logs for detailed progress information
-- Check the metrics to understand the system's performance 
+For support, please open an issue in the GitHub repository or contact the maintainers. 

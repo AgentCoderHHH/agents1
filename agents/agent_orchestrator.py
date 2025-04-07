@@ -7,10 +7,15 @@ from dotenv import load_dotenv
 import os
 import json
 from pathlib import Path
+import asyncio
+from datetime import datetime, timedelta
 
 from .internet_documentation_agent import InternetDocumentationAgent
 from .documentation_maker_agent import DocumentationMakerAgent
 from .prompt_engineering_agent import PromptEngineeringAgent
+from .data_hub import DataHub
+from .domain_agent import AgentConfig, AgentCapability
+from .analytics_agent import AnalyticsAgent
 
 # Load environment variables
 load_dotenv()
@@ -42,10 +47,15 @@ class AgentOrchestrator:
         self.execution_history = []
         self.context_store: Dict[str, RunContext] = {}
         self.execution_queue: List[Dict[str, Any]] = []
+        self.data_hub = None
 
     async def initialize(self):
-        """Initialize all agents."""
+        """Initialize all agents and data hub."""
         try:
+            # Initialize data hub first
+            self.data_hub = DataHub()
+            await self.data_hub.initialize()
+            
             # Initialize research agent
             self.agents["research"] = InternetDocumentationAgent()
             
@@ -55,7 +65,22 @@ class AgentOrchestrator:
             # Initialize prompt engineering agent
             self.agents["prompt"] = PromptEngineeringAgent()
             
-            logger.info("All agents initialized successfully")
+            # Initialize analytics agent
+            analytics_config = AgentConfig(
+                agent_id="analytics-agent",
+                capabilities=[
+                    AgentCapability.DATA_ANALYSIS,
+                    AgentCapability.REPORT_GENERATION,
+                    AgentCapability.MONITORING
+                ]
+            )
+            self.agents["analytics"] = AnalyticsAgent(analytics_config, self.data_hub)
+            
+            # Initialize all agents
+            for agent in self.agents.values():
+                await agent.initialize()
+            
+            logger.info("All agents and data hub initialized successfully")
             
         except Exception as e:
             logger.error(f"Error initializing agents: {str(e)}")
@@ -67,6 +92,9 @@ class AgentOrchestrator:
             # Initialize agents if not already done
             if not self.agents:
                 await self.initialize()
+            
+            # Create execution context
+            context = self.create_context(topic)
             
             # Step 1: Research the topic
             logger.info(f"Starting research on topic: {topic}")
@@ -83,12 +111,25 @@ class AgentOrchestrator:
                 reasoning_effort=reasoning_effort
             )
             
+            # Step 4: Generate analytics dashboard
+            logger.info("Generating analytics dashboard")
+            dashboard = await self.agents["analytics"].execute_task({
+                "type": "generate_dashboard",
+                "metrics": ["research_quality", "documentation_completeness"],
+                "timeframe": {
+                    "start": (datetime.now() - timedelta(days=7)).isoformat(),
+                    "end": datetime.now().isoformat(),
+                    "interval": "1d"
+                }
+            })
+            
             # Combine results
             workflow_results = {
                 "topic": topic,
                 "research": research_results,
                 "documentation": documentation,
-                "optimized_prompts": optimized_prompts
+                "optimized_prompts": optimized_prompts,
+                "analytics": dashboard
             }
             
             # Store execution history
@@ -103,7 +144,8 @@ class AgentOrchestrator:
                 "topic": topic,
                 "research": None,
                 "documentation": None,
-                "optimized_prompts": None
+                "optimized_prompts": None,
+                "analytics": None
             }
 
     async def get_execution_status(self) -> Dict[str, Any]:
@@ -112,9 +154,10 @@ class AgentOrchestrator:
             "total_executions": len(self.execution_history),
             "latest_execution": self.execution_history[-1] if self.execution_history else None,
             "agent_status": {
-                name: "initialized" if agent else "not_initialized"
+                name: await agent.report_status() if hasattr(agent, 'report_status') else "not_initialized"
                 for name, agent in self.agents.items()
-            }
+            },
+            "data_hub_status": await self.data_hub.report_status() if self.data_hub else "not_initialized"
         }
 
     async def cleanup(self):
@@ -123,6 +166,8 @@ class AgentOrchestrator:
             for agent in self.agents.values():
                 if hasattr(agent, 'cleanup'):
                     await agent.cleanup()
+            if self.data_hub:
+                await self.data_hub.cleanup()
             logger.info("Cleanup completed successfully")
         except Exception as e:
             logger.error(f"Error during cleanup: {str(e)}")
@@ -150,10 +195,7 @@ class AgentOrchestrator:
                 continue
 
             agent = self.agents[agent_type]
-            task = agent.execute(
-                context.topic,
-                plan.get("reasoning_effort", "balanced")
-            )
+            task = agent.execute_task(plan)
             tasks.append(task)
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
