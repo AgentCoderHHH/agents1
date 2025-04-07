@@ -22,4 +22,14 @@ build/
 
 # OS files
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Credentials and sensitive data
+credentials.json
+*.json
+.env.*
+!.env.example
+config/credentials/
+**/credentials/
+**/config/
+**/secrets/ 

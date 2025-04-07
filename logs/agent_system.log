@@ -131,3 +131,27 @@
 2025-04-06 08:04:40.579 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
 2025-04-06 08:05:02.198 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
 2025-04-06 08:05:16.216 | ERROR    | agents.prompt_engineering_agent:_evaluate_optimization:311 - Error evaluating optimization: division by zero
+2025-04-06 08:10:19.571 | INFO     | __main__:<module>:146 - Starting server on port 3001
+2025-04-06 08:10:20.677 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 08:10:20.677 | INFO     | __main__:startup_event:56 - Agents initialized successfully
+2025-04-06 08:10:25.244 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 08:10:53.491 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Agents in the Agentic World
+2025-04-06 08:11:15.262 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 08:11:45.470 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 08:12:05.392 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: Agents in the Agentic World
+2025-04-06 08:12:23.994 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 08:12:45.626 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 08:12:58.748 | ERROR    | agents.prompt_engineering_agent:_evaluate_optimization:311 - Error evaluating optimization: division by zero
+2025-04-06 09:50:54.421 | INFO     | __main__:<module>:146 - Starting server on port 3001
+2025-04-06 09:50:55.512 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 09:50:55.513 | INFO     | __main__:startup_event:56 - Agents initialized successfully
+2025-04-06 09:53:35.917 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 09:55:09.105 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 09:55:09.106 | INFO     | server:startup_event:56 - Agents initialized successfully
+2025-04-06 09:55:26.197 | INFO     | agents.agent_orchestrator:initialize:58 - All agents initialized successfully
+2025-04-06 09:55:26.197 | INFO     | server:startup_event:56 - Agents initialized successfully
+2025-04-06 09:55:29.478 | INFO     | __main__:start_monitoring:110 - Starting monitoring dashboard on 0.0.0.0:8000
+2025-04-06 09:56:06.717 | INFO     | agents.agent_orchestrator:execute_workflow:72 - Starting research on topic: i would now like to create a new agent. may be few for reporting and analytics. we have a website, and we have twitter. for website data and google analytics i will to make an agent that will read data from the google sheet and report the data in presentable manner. | for twitter i want the agent to go and grab from google sheet which is in a json format i guess your job now to make detailed plan of differetn agent needed for these task. e.g. for fetching agents whcih are differetn, digest the data agent, see the best possible metrics needed for that field and stay on topic, presenting agent which will code frontend and show to user agent, alert agent to notify devs seperate community seperate or other parties ( mention which channel?? telegram or?? ) and may be a lot more process of agents. please brainstrom. get the data and again provide the final defination of the agents i need along with mermaid of the new agents u added. feel free to use the current agents which we have when needed.
+2025-04-06 09:56:18.295 | INFO     | agents.agent_orchestrator:execute_workflow:76 - Generating documentation
+2025-04-06 09:56:40.618 | INFO     | agents.agent_orchestrator:execute_workflow:80 - Optimizing prompts
+2025-04-06 09:56:41.580 | ERROR    | agents.prompt_engineering_agent:_analyze_prompt_domain:274 - Error analyzing prompt domain: 'the primary domain of this prompt is technical.' is not a valid PromptDomain
